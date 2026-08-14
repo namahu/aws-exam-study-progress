@@ -18,7 +18,7 @@ export default defineManifest({
     "storage",
   ],
   content_scripts: [{
-    js: ['src/content/main.tsx'],
-    matches: ['https://*/*'],
+    js: ['src/content/content.ts'],
+    matches: ['https://aws-exam.net/*'],
   }],
 })

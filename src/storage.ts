@@ -21,6 +21,15 @@ export async function getExamList() {
   return result.examList ?? [];
 };
 
+export async function getLastStudiedExamId() {
+  const result = (await chrome.storage.local.get("lastStudiedExamId")) as Pick<StorageSchema, "lastStudiedExamId">;
+  return result.lastStudiedExamId ?? [];
+};
+
+async function recordLastStudiedExamId(examId: string) {
+  await chrome.storage.local.set({ lastStudiedExamId: examId });
+};
+
 /**
  * 試験データの取得（存在しない場合は初期値を返す）
  * @param examId 
@@ -52,7 +61,7 @@ let recordAnswerQueue = Promise.resolve();
 export function recordAnswer(params: {
   examId: string;
   problemId: string;
-  category: string;
+  categories: string[];
   isCorrect: boolean;
 }): Promise<void> {
   recordAnswerQueue = recordAnswerQueue
@@ -65,10 +74,10 @@ export function recordAnswer(params: {
 async function executeRecordAnswer(params: {
   examId: string;
   problemId: string;
-  category: string;
+  categories: string[];
   isCorrect: boolean;
 }): Promise<void> {
-  const { examId, problemId, category, isCorrect } = params;
+  const { examId, problemId, categories, isCorrect } = params;
   const now = new Date();
   const nowISO = now.toISOString();
   const todayKey = getTodayKey(now);
@@ -81,6 +90,9 @@ async function executeRecordAnswer(params: {
     examList.push(examId);
     await chrome.storage.local.set({ examList });
   }
+
+  // 最後に学習した試験のIDを記録
+  await recordLastStudiedExamId(examId);
 
   // 直近に同じデータがあるかチェック（直近10秒の重複登録チェック）
   const todayLogs = examData.dailyLogs[todayKey] || [];
@@ -96,7 +108,7 @@ async function executeRecordAnswer(params: {
   // problemStateの更新
   const existingState: ProblemState = examData.problemStates[problemId] || {
     problemId,
-    category,
+    categories,
     lastAnsweredAt: nowISO,
     lastIsCorrect: isCorrect, 
     totalAttempts: 0, // 回答回数の累計
@@ -105,7 +117,7 @@ async function executeRecordAnswer(params: {
 
   const updatedState: ProblemState = {
     ...existingState,
-    category,
+    categories,
     lastIsCorrect: isCorrect,
     lastAnsweredAt: nowISO,
     totalAttempts: existingState.totalAttempts + 1,
@@ -118,7 +130,8 @@ async function executeRecordAnswer(params: {
   const newLog: DailyAnswerLog = {
     logId: crypto.randomUUID(),
     problemId,
-    category,
+    category: "",
+    categories,
     isCorrect,
     answeredAt: nowISO,
   };
@@ -152,13 +165,21 @@ export function calculateAccuracy(logs: DailyAnswerLog[]): AccuracySummary {
   logs.forEach(log => {
     if (log.isCorrect) totalCorrect++;
 
-    if (!categoryMap[log.category]) {
-      categoryMap[log.category] = { total: 0, correct: 0};
-    }
-    categoryMap[log.category].total++;
-    if (log.isCorrect) {
-      categoryMap[log.category].correct++;
-    }
+    const cateogries = log.categories
+      ? log.categories.length > 0
+        ? log.categories
+        : [""]
+      : [log.category];
+
+    cateogries.forEach(category => {
+      if (!categoryMap[category]) {
+        categoryMap[category] = { total: 0, correct: 0};
+      }
+      categoryMap[category].total++;
+      if (log.isCorrect) {
+        categoryMap[category].correct++;
+      }
+    });
   });
 
   const categories: CategoryAccuracy[] = Object.entries(categoryMap).map(([category, stat]) => ({

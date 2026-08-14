@@ -1,0 +1,8 @@
+@import "tailwindcss/theme";
+@import "tailwindcss/utilities";
+
+.ext-status-badge {
+  @layer utilities {
+    all: unset;
+  }
+}
