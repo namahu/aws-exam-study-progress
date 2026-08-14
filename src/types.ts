@@ -7,6 +7,7 @@ export const DailyAnswerLogSchema = z.object({
   logId: z.uuid(),
   problemId: z.string(),
   category: z.string(),
+  categories: z.string().array(),
   isCorrect: z.boolean().default(false),
   answeredAt: z.iso.datetime(),
 });
@@ -17,6 +18,7 @@ export const DailyAnswerLogSchema = z.object({
 export const ProblemStateSchema = z.object({
   problemId: z.string(),
   category: z.string(),
+  categories: z.string().array(),
   lastAnsweredAt: z.iso.datetime(),
   lastIsCorrect: z.boolean().default(false),
   totalAttempts: z.number().default(0),
@@ -38,6 +40,7 @@ export const ExamDataSchema = z.object({
  */
 export const StorageSchemaZod = z.object({
   examList: z.array(z.string()),
+  lastStudiedExamId: z.string(),
 }).catchall(ExamDataSchema.optional());
 
 export type DailyAnswerLog = z.infer<typeof DailyAnswerLogSchema>;
