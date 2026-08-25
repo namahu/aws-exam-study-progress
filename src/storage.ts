@@ -23,7 +23,7 @@ export async function getExamList() {
 
 export async function getLastStudiedExamId() {
   const result = (await chrome.storage.local.get("lastStudiedExamId")) as Pick<StorageSchema, "lastStudiedExamId">;
-  return result.lastStudiedExamId ?? [];
+  return result.lastStudiedExamId ?? "";
 };
 
 async function recordLastStudiedExamId(examId: string) {
