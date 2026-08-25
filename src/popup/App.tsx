@@ -1,10 +1,12 @@
-import HelloWorld from '@/components/HelloWorld'
-import './App.css'
+import { getLastStudiedExamId } from '@/storage'
+import { RootLayout } from './app/root-layout'
+import { Suspense } from 'react';
 
 export default function App() {
+  const lastStudiedExamIdPromise = getLastStudiedExamId();
   return (
-    <div>
-      <HelloWorld msg="Vite + React + CRXJS" />
-    </div>
+    <Suspense>
+      <RootLayout lastStudiedExamIdPromise={lastStudiedExamIdPromise} />
+    </Suspense>
   )
 }
